@@ -11,7 +11,7 @@ class Element {
   focus() {}
   trigger(type, event = {}) { this.listeners[type]({ preventDefault() {}, ...event }); }
 }
-const elements = Object.fromEntries(['task-form', 'task-input', 'task-priority', 'tasks', 'task-filter', 'task-search', 'task-sort', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
+const elements = Object.fromEntries(['task-form', 'task-input', 'task-priority', 'task-due-date', 'tasks', 'task-filter', 'task-search', 'task-sort', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
 elements['task-filter'].value = 'all';
 elements['task-priority'].value = '中';
 elements['task-sort'].value = 'default';
@@ -209,4 +209,43 @@ assert.equal(sortElements['task-sort'].value, 'priority');
 assert.deepEqual(sortTexts(), ['高', '中', '无优先级', '低']);
 change('task-sort', 'default');
 assert.deepEqual(sortTexts(), ['低', '中', '高', '无优先级']);
+
+// 使用设备本地日期判断逾期，截止当天及已完成任务不逾期。
+const dateElements = Object.fromEntries(Object.keys(elements).map(id => [id, new Element()]));
+dateElements['task-filter'].value = 'all';
+let dateData = JSON.stringify([
+  { text: '旧任务', done: false },
+  { text: '昨天', done: false, dueDate: '2026-10-26' },
+  { text: '今天', done: false, dueDate: '2026-10-27' },
+  { text: '明天', done: false, dueDate: '2026-10-28' },
+  { text: '已完成', done: true, dueDate: '2026-10-26' }
+]);
+const dateContext = {
+  document: { querySelector: selector => dateElements[selector.slice(1)], createElement: () => new Element() },
+  localStorage: { getItem: () => dateData, setItem: (_, value) => { dateData = value; } },
+  Date: class extends Date { constructor() { super(2026, 9, 27, 0, 30); } }
+};
+const loadDates = () => vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), { ...dateContext });
+const dateLabels = () => dateElements.tasks.children.map(item => item.children[0].children[3]?.textContent);
+loadDates();
+assert.deepEqual(dateLabels(), [undefined, '截止日期：2026-10-26（已逾期）', '截止日期：2026-10-27', '截止日期：2026-10-28', '截止日期：2026-10-26']);
+dateElements['task-input'].value = '有日期';
+dateElements['task-due-date'].value = '2026-10-25';
+dateElements['task-form'].trigger('submit');
+assert.equal(dateElements['task-due-date'].value, '');
+dateElements['task-input'].value = '无日期';
+dateElements['task-form'].trigger('submit');
+loadDates();
+assert.equal(JSON.parse(dateData)[5].dueDate, '2026-10-25');
+assert.equal(dateLabels()[5], '截止日期：2026-10-25（已逾期）');
+assert.equal(dateLabels()[6], undefined);
+const dateCheckbox = dateElements.tasks.children[5].children[0].children[0];
+dateCheckbox.checked = true;
+dateCheckbox.trigger('change');
+assert.equal(dateLabels()[5], '截止日期：2026-10-25');
+dateElements.tasks.children[5].children[2].trigger('click');
+const dateEditor = dateElements.tasks.children[5].children[0];
+dateEditor.children[0].value = '修改名称';
+dateEditor.trigger('submit');
+assert.equal(JSON.parse(dateData)[5].dueDate, '2026-10-25');
 console.log('task filter checks passed');

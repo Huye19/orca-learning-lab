@@ -2,6 +2,7 @@ const key = 'learning-tasks';
 const form = document.querySelector('#task-form');
 const input = document.querySelector('#task-input');
 const priority = document.querySelector('#task-priority');
+const dueDate = document.querySelector('#task-due-date');
 const list = document.querySelector('#tasks');
 const filter = document.querySelector('#task-filter');
 const search = document.querySelector('#task-search');
@@ -60,6 +61,8 @@ function visibleEntries() {
 function render() {
   renderStats();
   list.replaceChildren();
+  const now = new Date();
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
   const entries = visibleEntries();
   entries.forEach(({ task, index }) => {
     const item = document.createElement('li');
@@ -80,6 +83,12 @@ function render() {
     text.textContent = task.text;
     const priorityText = document.createElement('small');
     priorityText.textContent = `优先级：${task.priority ?? '中'}`;
+    label.append(checkbox, text, priorityText);
+    if (task.dueDate) {
+      const dateText = document.createElement('small');
+      dateText.textContent = `截止日期：${task.dueDate}${!task.done && task.dueDate < today ? '（已逾期）' : ''}`;
+      label.append(dateText);
+    }
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.textContent = '删除';
@@ -126,7 +135,6 @@ function render() {
       item.replaceChildren(editor);
       name.focus();
     });
-    label.append(checkbox, text, priorityText);
     item.append(label, remove, edit);
     list.append(item);
   });
@@ -146,8 +154,9 @@ form.addEventListener('submit', event => {
     input.focus();
     return;
   }
-  if (save([...tasks, { text, done: false, priority: priority.value }])) {
+  if (save([...tasks, { text, done: false, priority: priority.value, dueDate: dueDate.value }])) {
     input.value = '';
+    dueDate.value = '';
     input.focus();
   }
 });
