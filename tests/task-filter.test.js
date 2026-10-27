@@ -11,9 +11,10 @@ class Element {
   focus() {}
   trigger(type, event = {}) { this.listeners[type]({ preventDefault() {}, ...event }); }
 }
-const elements = Object.fromEntries(['task-form', 'task-input', 'task-priority', 'tasks', 'task-filter', 'task-search', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
+const elements = Object.fromEntries(['task-form', 'task-input', 'task-priority', 'tasks', 'task-filter', 'task-search', 'task-sort', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
 elements['task-filter'].value = 'all';
 elements['task-priority'].value = '中';
+elements['task-sort'].value = 'default';
 let stored = JSON.stringify([{ text: '先完成', done: true }, { text: '待学习', done: false }]);
 const localStorage = { getItem: () => stored, setItem: (_, value) => { stored = value; } };
 vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), {
@@ -163,4 +164,49 @@ assert.deepEqual(searchTexts(), ['LEARN CSS']);
 searchElements['task-filter'].value = 'pending';
 searchElements['task-filter'].trigger('change');
 assert.deepEqual(searchTexts(), ['Learn JavaScript', 'Other']);
+
+// 排序只改变显示顺序，不改变存储顺序，并与筛选共同生效。
+const sortElements = Object.fromEntries(Object.keys(elements).map(id => [id, new Element()]));
+sortElements['task-filter'].value = 'all';
+sortElements['task-sort'].value = 'default';
+let sortData = JSON.stringify([
+  { text: '低', done: false, priority: '低' },
+  { text: '中', done: false, priority: '中' },
+  { text: '高', done: true, priority: '高' },
+  { text: '无优先级', done: false }
+]);
+const sortContext = {
+  document: { querySelector: selector => sortElements[selector.slice(1)], createElement: () => new Element() },
+  localStorage: { getItem: () => sortData, setItem: (_, value) => { sortData = value; } }
+};
+vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), sortContext);
+const sortList = sortElements.tasks;
+const sortTexts = () => sortList.children.map(item => item.children[0].children[1].textContent);
+const change = (id, value) => { sortElements[id].value = value; sortElements[id].trigger('change'); };
+assert.deepEqual(sortTexts(), ['低', '中', '高', '无优先级']);
+change('task-sort', 'priority');
+assert.deepEqual(sortTexts(), ['高', '中', '无优先级', '低']);
+assert.deepEqual(JSON.parse(sortData).map(task => task.text), ['低', '中', '高', '无优先级']);
+change('task-filter', 'pending');
+assert.deepEqual(sortTexts(), ['中', '无优先级', '低']);
+sortElements['task-search'].value = '优先级';
+sortElements['task-search'].trigger('input');
+assert.deepEqual(sortTexts(), ['无优先级']);
+sortElements['task-search'].value = '';
+sortElements['task-search'].trigger('input');
+assert.deepEqual(sortTexts(), ['中', '无优先级', '低']);
+change('task-filter', 'done');
+assert.deepEqual(sortTexts(), ['高']);
+change('task-filter', 'all');
+const sortedCheckbox = sortList.children[0].children[0].children[0];
+sortedCheckbox.checked = false;
+sortedCheckbox.trigger('change');
+assert.equal(JSON.parse(sortData)[2].text, '高');
+assert.equal(JSON.parse(sortData)[2].done, false);
+assert.deepEqual(sortTexts(), ['高', '中', '无优先级', '低']);
+vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), { ...sortContext });
+assert.equal(sortElements['task-sort'].value, 'priority');
+assert.deepEqual(sortTexts(), ['高', '中', '无优先级', '低']);
+change('task-sort', 'default');
+assert.deepEqual(sortTexts(), ['低', '中', '高', '无优先级']);
 console.log('task filter checks passed');
