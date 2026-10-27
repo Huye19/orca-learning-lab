@@ -21,6 +21,12 @@
     </form>
     <section aria-labelledby="list-title">
       <h2 id="list-title">我的任务</h2>
+      <label for="task-filter">筛选任务</label>
+      <select id="task-filter">
+        <option value="all">全部</option>
+        <option value="pending">待完成</option>
+        <option value="done">已完成</option>
+      </select>
       <p id="empty">还没有任务，添加一个开始学习吧。</p>
       <ul id="tasks"></ul>
     </section>

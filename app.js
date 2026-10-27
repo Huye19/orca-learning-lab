@@ -2,6 +2,7 @@ const key = 'learning-tasks';
 const form = document.querySelector('#task-form');
 const input = document.querySelector('#task-input');
 const list = document.querySelector('#tasks');
+const filter = document.querySelector('#task-filter');
 const empty = document.querySelector('#empty');
 const message = document.querySelector('#message');
 let tasks = [];
@@ -32,8 +33,10 @@ function save(next) {
 
 function render() {
   list.replaceChildren();
-  empty.hidden = tasks.length > 0;
+  let visible = 0;
   tasks.forEach((task, index) => {
+    if (filter.value === 'pending' && task.done || filter.value === 'done' && !task.done) return;
+    visible++;
     const item = document.createElement('li');
     item.classList.toggle('done', task.done);
     const label = document.createElement('label');
@@ -54,7 +57,11 @@ function render() {
     item.append(label, remove);
     list.append(item);
   });
+  empty.hidden = visible > 0;
+  empty.textContent = tasks.length ? '当前筛选条件下没有任务。' : '还没有任务，添加一个开始学习吧。';
 }
+
+filter.addEventListener('change', render);
 
 form.addEventListener('submit', event => {
   event.preventDefault();
