@@ -10,6 +10,7 @@ const statPending = document.querySelector('#stat-pending');
 const statDone = document.querySelector('#stat-done');
 let tasks = [];
 let storageReadable = true;
+const editors = new Map();
 
 try {
   const saved = JSON.parse(localStorage.getItem(key) || '[]');
@@ -50,6 +51,11 @@ function render() {
     visible++;
     const item = document.createElement('li');
     item.classList.toggle('done', task.done);
+    if (editors.has(task)) {
+      item.append(editors.get(task));
+      list.append(item);
+      return;
+    }
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -64,8 +70,49 @@ function render() {
     remove.textContent = '删除';
     remove.setAttribute('aria-label', `删除任务：${task.text}`);
     remove.addEventListener('click', () => save(tasks.filter((_, i) => i !== index)));
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.textContent = '编辑';
+    edit.setAttribute('aria-label', `编辑任务：${task.text}`);
+    edit.addEventListener('click', () => {
+      const editor = document.createElement('form');
+      const name = document.createElement('input');
+      name.type = 'text';
+      name.value = task.text;
+      name.setAttribute('aria-label', '任务名称');
+      const submit = document.createElement('button');
+      submit.type = 'submit';
+      submit.textContent = '保存';
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.textContent = '取消';
+      const cancelEdit = () => {
+        if (message.textContent === '任务名称不能为空。') message.textContent = '';
+        editors.delete(task);
+        render();
+      };
+      cancel.addEventListener('click', cancelEdit);
+      editor.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { event.preventDefault(); cancelEdit(); }
+      });
+      editor.addEventListener('submit', event => {
+        event.preventDefault();
+        const value = name.value.trim();
+        if (!value) {
+          message.textContent = '任务名称不能为空。';
+          name.focus();
+          return;
+        }
+        editors.delete(task);
+        if (!save(tasks.map(entry => entry === task ? { ...entry, text: value } : entry))) editors.set(task, editor);
+      });
+      editor.append(name, submit, cancel);
+      editors.set(task, editor);
+      item.replaceChildren(editor);
+      name.focus();
+    });
     label.append(checkbox, text);
-    item.append(label, remove);
+    item.append(label, remove, edit);
     list.append(item);
   });
   empty.hidden = visible > 0;
