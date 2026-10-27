@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>学习任务看板</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>学习任务看板</h1>
+    <p class="intro">记录每一步学习进度。</p>
+    <form id="task-form">
+      <label for="task-input">新任务</label>
+      <div class="entry">
+        <input id="task-input" placeholder="例如：阅读一章教材" autocomplete="off" required>
+        <button type="submit">添加任务</button>
+      </div>
+      <p id="message" role="status" aria-live="polite"></p>
+    </form>
+    <section aria-labelledby="list-title">
+      <h2 id="list-title">我的任务</h2>
+      <p id="empty">还没有任务，添加一个开始学习吧。</p>
+      <ul id="tasks"></ul>
+    </section>
+  </main>
+</body>
+</html>
