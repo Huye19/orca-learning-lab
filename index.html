@@ -15,6 +15,12 @@
       <label for="task-input">新任务</label>
       <div class="entry">
         <input id="task-input" placeholder="例如：阅读一章教材" autocomplete="off" required>
+        <label for="task-priority">优先级</label>
+        <select id="task-priority">
+          <option value="高">高</option>
+          <option value="中" selected>中</option>
+          <option value="低">低</option>
+        </select>
         <button type="submit">添加任务</button>
       </div>
       <p id="message" role="status" aria-live="polite"></p>
