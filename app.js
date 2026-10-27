@@ -10,6 +10,7 @@ const statPending = document.querySelector('#stat-pending');
 const statDone = document.querySelector('#stat-done');
 let tasks = [];
 let storageReadable = true;
+const editors = new Map();
 
 try {
   const saved = JSON.parse(localStorage.getItem(key) || '[]');
@@ -50,6 +51,11 @@ function render() {
     visible++;
     const item = document.createElement('li');
     item.classList.toggle('done', task.done);
+    if (editors.has(task)) {
+      item.append(editors.get(task));
+      list.append(item);
+      return;
+    }
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -80,7 +86,11 @@ function render() {
       const cancel = document.createElement('button');
       cancel.type = 'button';
       cancel.textContent = '取消';
-      const cancelEdit = () => { message.textContent = ''; render(); };
+      const cancelEdit = () => {
+        if (message.textContent === '任务名称不能为空。') message.textContent = '';
+        editors.delete(task);
+        render();
+      };
       cancel.addEventListener('click', cancelEdit);
       editor.addEventListener('keydown', event => {
         if (event.key === 'Escape') { event.preventDefault(); cancelEdit(); }
@@ -89,13 +99,15 @@ function render() {
         event.preventDefault();
         const value = name.value.trim();
         if (!value) {
-          message.textContent = '请输入非空白任务。';
+          message.textContent = '任务名称不能为空。';
           name.focus();
           return;
         }
-        save(tasks.map((entry, i) => i === index ? { ...entry, text: value } : entry));
+        editors.delete(task);
+        if (!save(tasks.map(entry => entry === task ? { ...entry, text: value } : entry))) editors.set(task, editor);
       });
       editor.append(name, submit, cancel);
+      editors.set(task, editor);
       item.replaceChildren(editor);
       name.focus();
     });
