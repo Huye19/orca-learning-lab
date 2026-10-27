@@ -4,6 +4,7 @@ const input = document.querySelector('#task-input');
 const priority = document.querySelector('#task-priority');
 const list = document.querySelector('#tasks');
 const filter = document.querySelector('#task-filter');
+const sort = document.querySelector('#task-sort');
 const empty = document.querySelector('#empty');
 const message = document.querySelector('#message');
 const statTotal = document.querySelector('#stat-total');
@@ -43,13 +44,22 @@ function renderStats() {
   statDone.textContent = done;
 }
 
+const priorityRanks = { 高: 3, 中: 2, 低: 1 };
+const priorityRank = task => priorityRanks[task.priority ?? '中'] ?? priorityRanks['中'];
+
+function visibleEntries() {
+  const entries = tasks
+    .map((task, index) => ({ task, index }))
+    .filter(({ task }) => !(filter.value === 'pending' && task.done || filter.value === 'done' && !task.done));
+  if (sort.value === 'priority') entries.sort((a, b) => priorityRank(b.task) - priorityRank(a.task));
+  return entries;
+}
+
 function render() {
   renderStats();
   list.replaceChildren();
-  let visible = 0;
-  tasks.forEach((task, index) => {
-    if (filter.value === 'pending' && task.done || filter.value === 'done' && !task.done) return;
-    visible++;
+  const entries = visibleEntries();
+  entries.forEach(({ task, index }) => {
     const item = document.createElement('li');
     item.classList.toggle('done', task.done);
     if (editors.has(task)) {
@@ -118,11 +128,12 @@ function render() {
     item.append(label, remove, edit);
     list.append(item);
   });
-  empty.hidden = visible > 0;
+  empty.hidden = entries.length > 0;
   empty.textContent = tasks.length ? '当前筛选条件下没有任务。' : '还没有任务，添加一个开始学习吧。';
 }
 
 filter.addEventListener('change', render);
+sort.addEventListener('change', render);
 
 form.addEventListener('submit', event => {
   event.preventDefault();
