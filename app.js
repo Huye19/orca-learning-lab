@@ -64,8 +64,43 @@ function render() {
     remove.textContent = '删除';
     remove.setAttribute('aria-label', `删除任务：${task.text}`);
     remove.addEventListener('click', () => save(tasks.filter((_, i) => i !== index)));
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.textContent = '编辑';
+    edit.setAttribute('aria-label', `编辑任务：${task.text}`);
+    edit.addEventListener('click', () => {
+      const editor = document.createElement('form');
+      const name = document.createElement('input');
+      name.type = 'text';
+      name.value = task.text;
+      name.setAttribute('aria-label', '任务名称');
+      const submit = document.createElement('button');
+      submit.type = 'submit';
+      submit.textContent = '保存';
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.textContent = '取消';
+      const cancelEdit = () => { message.textContent = ''; render(); };
+      cancel.addEventListener('click', cancelEdit);
+      editor.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { event.preventDefault(); cancelEdit(); }
+      });
+      editor.addEventListener('submit', event => {
+        event.preventDefault();
+        const value = name.value.trim();
+        if (!value) {
+          message.textContent = '请输入非空白任务。';
+          name.focus();
+          return;
+        }
+        save(tasks.map((entry, i) => i === index ? { ...entry, text: value } : entry));
+      });
+      editor.append(name, submit, cancel);
+      item.replaceChildren(editor);
+      name.focus();
+    });
     label.append(checkbox, text);
-    item.append(label, remove);
+    item.append(label, remove, edit);
     list.append(item);
   });
   empty.hidden = visible > 0;

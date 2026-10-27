@@ -23,4 +23,6 @@ li label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
 li input { width: 20px; height: 20px; flex: none; accent-color: #315edb; }
 li.done span { color: #69798e; text-decoration: line-through; }
 li button { background: #f1f3f7; color: #39485d; padding: 8px 12px; }
+li form { display: flex; flex: 1; min-width: 0; gap: 8px; }
+li form input[type="text"] { width: auto; height: auto; flex: 1; }
 @media (max-width: 400px) { body { padding: 12px; } main { padding: 20px; } .entry { flex-direction: column; } }
