@@ -4,6 +4,9 @@ const input = document.querySelector('#task-input');
 const list = document.querySelector('#tasks');
 const empty = document.querySelector('#empty');
 const message = document.querySelector('#message');
+const statTotal = document.querySelector('#stat-total');
+const statPending = document.querySelector('#stat-pending');
+const statDone = document.querySelector('#stat-done');
 let tasks = [];
 let storageReadable = true;
 
@@ -30,7 +33,15 @@ function save(next) {
   }
 }
 
+function renderStats() {
+  const done = tasks.filter(task => task.done).length;
+  statTotal.textContent = tasks.length;
+  statPending.textContent = tasks.length - done;
+  statDone.textContent = done;
+}
+
 function render() {
+  renderStats();
   list.replaceChildren();
   empty.hidden = tasks.length > 0;
   tasks.forEach((task, index) => {

@@ -19,6 +19,14 @@
       </div>
       <p id="message" role="status" aria-live="polite"></p>
     </form>
+    <section aria-labelledby="stats-title">
+      <h2 id="stats-title">任务统计</h2>
+      <dl id="stats" aria-live="polite">
+        <div><dt>全部任务</dt><dd id="stat-total">0</dd></div>
+        <div><dt>待完成</dt><dd id="stat-pending">0</dd></div>
+        <div><dt>已完成</dt><dd id="stat-done">0</dd></div>
+      </dl>
+    </section>
     <section aria-labelledby="list-title">
       <h2 id="list-title">我的任务</h2>
       <p id="empty">还没有任务，添加一个开始学习吧。</p>
