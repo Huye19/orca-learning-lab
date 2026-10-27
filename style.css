@@ -6,6 +6,7 @@ h1 { margin: 0; font-size: 1.75rem; }
 .intro { color: #607087; margin: 8px 0 28px; }
 label { display: block; font-weight: 600; margin-bottom: 8px; }
 .entry { display: flex; gap: 8px; }
+.entry label { align-self: center; margin: 0; white-space: nowrap; }
 input[type="text"], input:not([type]) { min-width: 0; flex: 1; padding: 12px; border: 1px solid #aab7c8; border-radius: 8px; font: inherit; }
 button { border: 0; border-radius: 8px; padding: 12px 16px; background: #315edb; color: white; font: inherit; cursor: pointer; }
 select { padding: 8px 12px; border: 1px solid #aab7c8; border-radius: 8px; background: white; color: inherit; font: inherit; }
@@ -20,9 +21,10 @@ h2 { margin: 24px 0 12px; font-size: 1.15rem; }
 ul { list-style: none; margin: 0; padding: 0; }
 li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e8edf4; }
 li label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; margin: 0; font-weight: normal; overflow-wrap: anywhere; }
+li small { color: #607087; white-space: nowrap; }
 li input { width: 20px; height: 20px; flex: none; accent-color: #315edb; }
 li.done span { color: #69798e; text-decoration: line-through; }
 li button { background: #f1f3f7; color: #39485d; padding: 8px 12px; }
 li form { display: flex; flex: 1; min-width: 0; gap: 8px; }
 li form input[type="text"] { width: auto; height: auto; flex: 1; }
-@media (max-width: 400px) { body { padding: 12px; } main { padding: 20px; } .entry { flex-direction: column; } }
+@media (max-width: 400px) { body { padding: 12px; } main { padding: 20px; } .entry { flex-direction: column; } .entry label { align-self: flex-start; } }

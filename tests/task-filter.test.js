@@ -11,8 +11,9 @@ class Element {
   focus() {}
   trigger(type, event = {}) { this.listeners[type]({ preventDefault() {}, ...event }); }
 }
-const elements = Object.fromEntries(['task-form', 'task-input', 'tasks', 'task-filter', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
+const elements = Object.fromEntries(['task-form', 'task-input', 'task-priority', 'tasks', 'task-filter', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
 elements['task-filter'].value = 'all';
+elements['task-priority'].value = '中';
 let stored = JSON.stringify([{ text: '先完成', done: true }, { text: '待学习', done: false }]);
 const localStorage = { getItem: () => stored, setItem: (_, value) => { stored = value; } };
 vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), {
@@ -24,6 +25,8 @@ const select = value => { filter.value = value; filter.trigger('change'); };
 const texts = () => list.children.map(item => item.children[0].children[1].textContent);
 const saved = () => JSON.parse(stored);
 assert.deepEqual(texts(), ['先完成', '待学习']);
+assert.equal(list.children[0].children[0].children[2].textContent, '优先级：中');
+assert.equal(saved()[0].priority, undefined);
 list.children[0].children[2].trigger('click');
 let editor = list.children[0].children[0];
 editor.children[0].value = '   ';
@@ -55,8 +58,15 @@ select('pending');
 assert.deepEqual(texts(), ['待学习']);
 assert.equal(saved().length, 2);
 elements['task-input'].value = '新任务';
+elements['task-priority'].value = '高';
 elements['task-form'].trigger('submit');
 assert.deepEqual(texts(), ['待学习', '新任务']);
+assert.equal(saved()[2].priority, '高');
+assert.equal(list.children[1].children[0].children[2].textContent, '优先级：高');
+vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), {
+  document: { querySelector: selector => elements[selector.slice(1)], createElement: () => new Element() }, localStorage
+});
+assert.equal(list.children[1].children[0].children[2].textContent, '优先级：高');
 const checkbox = list.children[0].children[0].children[0];
 checkbox.checked = true;
 checkbox.trigger('change');
@@ -106,4 +116,24 @@ failed.trigger('submit');
 assert.equal(failed.children[0].value, '写入失败');
 failed.children[2].trigger('click');
 assert.equal(other.message.textContent, '保存失败，请检查浏览器存储设置或可用空间。');
+
+// 新任务的默认和各优先级均可保存，重新加载后仍显示。
+const priorityElements = Object.fromEntries(Object.keys(elements).map(id => [id, new Element()]));
+priorityElements['task-filter'].value = 'all';
+priorityElements['task-priority'].value = '中';
+assert.match(fs.readFileSync('index.html', 'utf8'), /<option value="中" selected>/);
+let priorityData = '[]';
+const priorityContext = {
+  document: { querySelector: selector => priorityElements[selector.slice(1)], createElement: () => new Element() },
+  localStorage: { getItem: () => priorityData, setItem: (_, value) => { priorityData = value; } }
+};
+vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), { ...priorityContext });
+for (const value of ['中', '高', '低']) {
+  priorityElements['task-priority'].value = value;
+  priorityElements['task-input'].value = value + '任务';
+  priorityElements['task-form'].trigger('submit');
+}
+vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), { ...priorityContext });
+assert.deepEqual(JSON.parse(priorityData).map(task => task.priority), ['中', '高', '低']);
+assert.deepEqual(priorityElements.tasks.children.map(item => item.children[0].children[2].textContent), ['优先级：中', '优先级：高', '优先级：低']);
 console.log('task filter checks passed');

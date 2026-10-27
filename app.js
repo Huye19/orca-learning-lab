@@ -1,6 +1,7 @@
 const key = 'learning-tasks';
 const form = document.querySelector('#task-form');
 const input = document.querySelector('#task-input');
+const priority = document.querySelector('#task-priority');
 const list = document.querySelector('#tasks');
 const filter = document.querySelector('#task-filter');
 const empty = document.querySelector('#empty');
@@ -65,6 +66,8 @@ function render() {
     });
     const text = document.createElement('span');
     text.textContent = task.text;
+    const priorityText = document.createElement('small');
+    priorityText.textContent = `优先级：${task.priority ?? '中'}`;
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.textContent = '删除';
@@ -111,7 +114,7 @@ function render() {
       item.replaceChildren(editor);
       name.focus();
     });
-    label.append(checkbox, text);
+    label.append(checkbox, text, priorityText);
     item.append(label, remove, edit);
     list.append(item);
   });
@@ -129,7 +132,7 @@ form.addEventListener('submit', event => {
     input.focus();
     return;
   }
-  if (save([...tasks, { text, done: false }])) {
+  if (save([...tasks, { text, done: false, priority: priority.value }])) {
     input.value = '';
     input.focus();
   }
