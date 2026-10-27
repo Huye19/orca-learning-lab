@@ -4,6 +4,7 @@ const input = document.querySelector('#task-input');
 const priority = document.querySelector('#task-priority');
 const list = document.querySelector('#tasks');
 const filter = document.querySelector('#task-filter');
+const search = document.querySelector('#task-search');
 const sort = document.querySelector('#task-sort');
 const empty = document.querySelector('#empty');
 const message = document.querySelector('#message');
@@ -48,9 +49,10 @@ const priorityRanks = { 高: 3, 中: 2, 低: 1 };
 const priorityRank = task => priorityRanks[task.priority ?? '中'] ?? priorityRanks['中'];
 
 function visibleEntries() {
+  const keyword = search.value.toLowerCase();
   const entries = tasks
     .map((task, index) => ({ task, index }))
-    .filter(({ task }) => !(filter.value === 'pending' && task.done || filter.value === 'done' && !task.done));
+    .filter(({ task }) => !(filter.value === 'pending' && task.done || filter.value === 'done' && !task.done) && task.text.toLowerCase().includes(keyword));
   if (sort.value === 'priority') entries.sort((a, b) => priorityRank(b.task) - priorityRank(a.task));
   return entries;
 }
@@ -133,6 +135,7 @@ function render() {
 }
 
 filter.addEventListener('change', render);
+search.addEventListener('input', render);
 sort.addEventListener('change', render);
 
 form.addEventListener('submit', event => {

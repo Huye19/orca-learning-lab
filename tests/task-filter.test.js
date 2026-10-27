@@ -3,7 +3,7 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 
 class Element {
-  constructor() { this.children = []; this.listeners = {}; this.classList = { toggle() {} }; }
+  constructor() { this.value = ''; this.children = []; this.listeners = {}; this.classList = { toggle() {} }; }
   addEventListener(type, callback) { this.listeners[type] = callback; }
   append(...children) { this.children.push(...children); }
   replaceChildren(...children) { this.children = children; }
@@ -11,7 +11,7 @@ class Element {
   focus() {}
   trigger(type, event = {}) { this.listeners[type]({ preventDefault() {}, ...event }); }
 }
-const elements = Object.fromEntries(['task-form', 'task-input', 'task-priority', 'tasks', 'task-filter', 'task-sort', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
+const elements = Object.fromEntries(['task-form', 'task-input', 'task-priority', 'tasks', 'task-filter', 'task-search', 'task-sort', 'empty', 'message', 'stat-total', 'stat-pending', 'stat-done'].map(id => [id, new Element()]));
 elements['task-filter'].value = 'all';
 elements['task-priority'].value = '中';
 elements['task-sort'].value = 'default';
@@ -137,6 +137,33 @@ for (const value of ['中', '高', '低']) {
 vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), { ...priorityContext });
 assert.deepEqual(JSON.parse(priorityData).map(task => task.priority), ['中', '高', '低']);
 assert.deepEqual(priorityElements.tasks.children.map(item => item.children[0].children[2].textContent), ['优先级：中', '优先级：高', '优先级：低']);
+// 搜索实时忽略大小写，并与完成状态筛选共同生效。
+const searchElements = Object.fromEntries(Object.keys(elements).map(id => [id, new Element()]));
+searchElements['task-filter'].value = 'all';
+vm.runInNewContext(fs.readFileSync('app.js', 'utf8'), {
+  document: { querySelector: selector => searchElements[selector.slice(1)], createElement: () => new Element() },
+  localStorage: { getItem: () => JSON.stringify([{ text: 'Learn JavaScript', done: false }, { text: 'LEARN CSS', done: true }, { text: 'Other', done: false }]) }
+});
+const searchTexts = () => searchElements.tasks.children.map(item => item.children[0].children[1].textContent);
+searchElements['task-search'].value = 'lEaRn';
+searchElements['task-search'].trigger('input');
+assert.deepEqual(searchTexts(), ['Learn JavaScript', 'LEARN CSS']);
+searchElements['task-filter'].value = 'pending';
+searchElements['task-filter'].trigger('change');
+assert.deepEqual(searchTexts(), ['Learn JavaScript']);
+searchElements['task-search'].value = 'css';
+searchElements['task-search'].trigger('input');
+assert.deepEqual(searchTexts(), []);
+assert.equal(searchElements.empty.hidden, false);
+searchElements['task-filter'].value = 'done';
+searchElements['task-filter'].trigger('change');
+assert.deepEqual(searchTexts(), ['LEARN CSS']);
+searchElements['task-search'].value = '';
+searchElements['task-search'].trigger('input');
+assert.deepEqual(searchTexts(), ['LEARN CSS']);
+searchElements['task-filter'].value = 'pending';
+searchElements['task-filter'].trigger('change');
+assert.deepEqual(searchTexts(), ['Learn JavaScript', 'Other']);
 
 // 排序只改变显示顺序，不改变存储顺序，并与筛选共同生效。
 const sortElements = Object.fromEntries(Object.keys(elements).map(id => [id, new Element()]));
@@ -161,6 +188,12 @@ change('task-sort', 'priority');
 assert.deepEqual(sortTexts(), ['高', '中', '无优先级', '低']);
 assert.deepEqual(JSON.parse(sortData).map(task => task.text), ['低', '中', '高', '无优先级']);
 change('task-filter', 'pending');
+assert.deepEqual(sortTexts(), ['中', '无优先级', '低']);
+sortElements['task-search'].value = '优先级';
+sortElements['task-search'].trigger('input');
+assert.deepEqual(sortTexts(), ['无优先级']);
+sortElements['task-search'].value = '';
+sortElements['task-search'].trigger('input');
 assert.deepEqual(sortTexts(), ['中', '无优先级', '低']);
 change('task-filter', 'done');
 assert.deepEqual(sortTexts(), ['高']);
