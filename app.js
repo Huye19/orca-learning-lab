@@ -4,6 +4,7 @@ const input = document.querySelector('#task-input');
 const priority = document.querySelector('#task-priority');
 const list = document.querySelector('#tasks');
 const filter = document.querySelector('#task-filter');
+const search = document.querySelector('#task-search');
 const empty = document.querySelector('#empty');
 const message = document.querySelector('#message');
 const statTotal = document.querySelector('#stat-total');
@@ -47,8 +48,10 @@ function render() {
   renderStats();
   list.replaceChildren();
   let visible = 0;
+  const keyword = search.value.toLowerCase();
   tasks.forEach((task, index) => {
     if (filter.value === 'pending' && task.done || filter.value === 'done' && !task.done) return;
+    if (!task.text.toLowerCase().includes(keyword)) return;
     visible++;
     const item = document.createElement('li');
     item.classList.toggle('done', task.done);
@@ -123,6 +126,7 @@ function render() {
 }
 
 filter.addEventListener('change', render);
+search.addEventListener('input', render);
 
 form.addEventListener('submit', event => {
   event.preventDefault();
